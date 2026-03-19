@@ -1,0 +1,244 @@
+{
+  "meta": {
+    "key": "A minor",
+    "tempo": "82",
+    "time signature": "4/4",
+    "quantize": "16th",
+    "feel": "Swing 67%",
+    "pocket": "Deep-Behind"
+  },
+  "tags": [
+    {
+      "name": "Key",
+      "value": "A minor",
+      "scope": "global"
+    },
+    {
+      "name": "Tempo",
+      "value": "82",
+      "scope": "global"
+    },
+    {
+      "name": "Time Signature",
+      "value": "4/4",
+      "scope": "global"
+    },
+    {
+      "name": "Quantize",
+      "value": "16th",
+      "scope": "global"
+    },
+    {
+      "name": "Feel",
+      "value": "Swing 67%",
+      "scope": "global"
+    },
+    {
+      "name": "Pocket",
+      "value": "Deep-Behind",
+      "scope": "global"
+    }
+  ],
+  "sections": [
+    {
+      "name": "Verse",
+      "tags": [],
+      "tracks": {
+        "Chords": {
+          "name": "Chords",
+          "tags": [],
+          "bars": [
+            {
+              "index": 1,
+              "cells": [
+                {
+                  "raw": "Am7",
+                  "tokens": [
+                    "Am7"
+                  ],
+                  "tags": []
+                },
+                {
+                  "raw": "D7",
+                  "tokens": [
+                    "D7"
+                  ],
+                  "tags": []
+                },
+                {
+                  "raw": "Gm7",
+                  "tokens": [
+                    "Gm7"
+                  ],
+                  "tags": []
+                },
+                {
+                  "raw": "C7",
+                  "tokens": [
+                    "C7"
+                  ],
+                  "tags": []
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "cells": [
+                {
+                  "raw": "Am7",
+                  "tokens": [
+                    "Am7"
+                  ],
+                  "tags": []
+                },
+                {
+                  "raw": "(R)",
+                  "tokens": [
+                    "(R)"
+                  ],
+                  "tags": []
+                },
+                {
+                  "raw": "Eb9",
+                  "tokens": [
+                    "Eb9"
+                  ],
+                  "tags": []
+                },
+                {
+                  "raw": "F9",
+                  "tokens": [
+                    "F9"
+                  ],
+                  "tags": []
+                }
+              ]
+            }
+          ]
+        },
+        "Melody": {
+          "name": "Melody",
+          "tags": [],
+          "bars": [
+            {
+              "index": 1,
+              "cells": [
+                {
+                  "raw": "A3-- (R)",
+                  "tokens": [
+                    "A3--",
+                    "(R)"
+                  ],
+                  "tags": []
+                },
+                {
+                  "raw": "C4- D4- E4- F4-",
+                  "tokens": [
+                    "C4-",
+                    "D4-",
+                    "E4-",
+                    "F4-"
+                  ],
+                  "tags": []
+                },
+                {
+                  "raw": "G4--",
+                  "tokens": [
+                    "G4--"
+                  ],
+                  "tags": []
+                },
+                {
+                  "raw": "(R)",
+                  "tokens": [
+                    "(R)"
+                  ],
+                  "tags": []
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "cells": [
+                {
+                  "raw": "A3- B3-",
+                  "tokens": [
+                    "A3-",
+                    "B3-"
+                  ],
+                  "tags": []
+                },
+                {
+                  "raw": "C4--(mf)",
+                  "tokens": [
+                    "C4--(mf)"
+                  ],
+                  "tags": []
+                },
+                {
+                  "raw": "D4--",
+                  "tokens": [
+                    "D4--"
+                  ],
+                  "tags": []
+                },
+                {
+                  "raw": "E4^",
+                  "tokens": [
+                    "E4^"
+                  ],
+                  "tags": []
+                }
+              ]
+            }
+          ]
+        },
+        "Drums": {
+          "name": "Drums",
+          "tags": [],
+          "bars": [
+            {
+              "index": 1,
+              "cells": [
+                {
+                  "raw": "K . H . S . H .",
+                  "tokens": [
+                    "K",
+                    ".",
+                    "H",
+                    ".",
+                    "S",
+                    ".",
+                    "H",
+                    "."
+                  ],
+                  "tags": []
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "cells": [
+                {
+                  "raw": "K . H . S . H .",
+                  "tokens": [
+                    "K",
+                    ".",
+                    "H",
+                    ".",
+                    "S",
+                    ".",
+                    "H",
+                    "."
+                  ],
+                  "tags": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "struct": []
+}

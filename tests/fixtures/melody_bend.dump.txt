@@ -1,0 +1,17 @@
+0	0	time_signature	-	4/4
+0	0	tempo	-	bpm=120
+0	0	end_of_track	-	-
+0	1	program_change	1	program=80
+0	1	pitchbend	1	8192
+0	1	note_on	1	note=57 vel=90
+240	1	pitchbend	1	16383
+480	1	note_off	1	note=57 vel=0
+480	1	pitchbend	1	8192
+480	1	pitchbend	1	8192
+480	1	note_on	1	note=57 vel=90
+720	1	pitchbend	1	12288
+960	1	note_off	1	note=57 vel=0
+960	1	pitchbend	1	8192
+960	1	note_on	1	note=60 vel=90
+1440	1	note_off	1	note=60 vel=0
+1440	1	end_of_track	-	-

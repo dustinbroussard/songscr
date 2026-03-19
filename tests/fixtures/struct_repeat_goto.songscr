@@ -1,0 +1,14 @@
+[Tempo: 120] [Time Signature: 4/4] [Quantize: 16th]
+
+[Verse]
+#Verse1
+[Track: Chords]
+| C | C | C | C |
+
+[Chorus]
+#Chorus1
+[Track: Chords]
+| G | G | G | G |
+
+[Goto: #Chorus1]
+[Repeat: Verse x2]

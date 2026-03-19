@@ -1,0 +1,60 @@
+0	0	time_signature	-	4/4
+0	0	tempo	-	bpm=90
+0	0	end_of_track	-	-
+0	1	program_change	0	program=0
+0	1	note_on	0	note=48 vel=75
+0	1	note_on	0	note=52 vel=75
+0	1	note_on	0	note=55 vel=75
+0	1	note_on	0	note=58 vel=75
+480	1	note_off	0	note=48 vel=0
+480	1	note_off	0	note=52 vel=0
+480	1	note_off	0	note=55 vel=0
+480	1	note_off	0	note=58 vel=0
+480	1	note_on	0	note=53 vel=75
+480	1	note_on	0	note=57 vel=75
+480	1	note_on	0	note=60 vel=75
+480	1	note_on	0	note=63 vel=75
+960	1	note_off	0	note=53 vel=0
+960	1	note_off	0	note=57 vel=0
+960	1	note_off	0	note=60 vel=0
+960	1	note_off	0	note=63 vel=0
+960	1	note_on	0	note=48 vel=75
+960	1	note_on	0	note=52 vel=75
+960	1	note_on	0	note=55 vel=75
+960	1	note_on	0	note=58 vel=75
+1440	1	note_off	0	note=48 vel=0
+1440	1	note_off	0	note=52 vel=0
+1440	1	note_off	0	note=55 vel=0
+1440	1	note_off	0	note=58 vel=0
+1440	1	note_on	0	note=55 vel=75
+1440	1	note_on	0	note=59 vel=75
+1440	1	note_on	0	note=62 vel=75
+1440	1	note_on	0	note=65 vel=75
+1920	1	note_off	0	note=55 vel=0
+1920	1	note_off	0	note=59 vel=0
+1920	1	note_off	0	note=62 vel=0
+1920	1	note_off	0	note=65 vel=0
+1920	1	end_of_track	-	-
+0	2	program_change	2	program=32
+0	2	note_on	2	note=36 vel=78
+480	2	note_off	2	note=36 vel=0
+480	2	note_on	2	note=48 vel=78
+960	2	note_off	2	note=48 vel=0
+960	2	note_on	2	note=36 vel=78
+1440	2	note_off	2	note=36 vel=0
+1440	2	note_on	2	note=50 vel=78
+1920	2	note_off	2	note=50 vel=0
+1920	2	end_of_track	-	-
+0	3	note_on	9	note=36 vel=100
+30	3	note_off	9	note=36 vel=0
+240	3	note_on	9	note=42 vel=100
+270	3	note_off	9	note=42 vel=0
+720	3	note_on	9	note=42 vel=100
+750	3	note_off	9	note=42 vel=0
+960	3	note_on	9	note=38 vel=100
+990	3	note_off	9	note=38 vel=0
+1200	3	note_on	9	note=42 vel=100
+1230	3	note_off	9	note=42 vel=0
+1680	3	note_on	9	note=42 vel=100
+1710	3	note_off	9	note=42 vel=0
+1710	3	end_of_track	-	-

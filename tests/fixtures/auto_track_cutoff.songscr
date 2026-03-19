@@ -1,0 +1,9 @@
+[Tempo: 120] [Time Signature: 4/4] [Quantize: 16th]
+
+[Verse]
+[Track: Melody]
+[Auto: Filter_Cutoff 10%->90%]
+| C4 | D4 | E4 | F4 |
+| G4 | A4 | B4 | C5 |
+| D5 | E5 | F5 | G5 |
+| A5 | G5 | F5 | E5 |

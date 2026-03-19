@@ -1,0 +1,17 @@
+0	0	time_signature	-	4/4
+0	0	tempo	-	bpm=120
+0	0	end_of_track	-	-
+0	1	program_change	1	program=80
+0	1	cc	1	cc=1 val=14
+0	1	note_on	1	note=55 vel=90
+480	1	note_off	1	note=55 vel=0
+480	1	cc	1	cc=1 val=0
+480	1	cc	1	cc=1 val=71
+480	1	note_on	1	note=55 vel=90
+960	1	note_off	1	note=55 vel=0
+960	1	cc	1	cc=1 val=0
+960	1	cc	1	cc=1 val=42
+960	1	note_on	1	note=55 vel=90
+1440	1	note_off	1	note=55 vel=0
+1440	1	cc	1	cc=1 val=0
+1440	1	end_of_track	-	-

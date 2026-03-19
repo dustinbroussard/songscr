@@ -1,0 +1,102 @@
+{
+  "audit_date": "2026-03-19",
+  "environment": {
+    "cwd": "/home/dustin/Projects/songscr",
+    "python": ".venv/bin/python",
+    "notes": [
+      "Measurements are local CLI subprocess timings",
+      "Five runs per command",
+      "These are baselines, not service SLOs"
+    ]
+  },
+  "test_suite": {
+    "command": ".venv/bin/python -m pytest -q",
+    "result": "33 passed in 3.41s"
+  },
+  "commands": {
+    "lint_sample": {
+      "command": ".venv/bin/python -m songscr.cli lint sample.songscr",
+      "returncode": 0,
+      "runs": 5,
+      "mean_ms": 76.82,
+      "median_ms": 76.0,
+      "min_ms": 71.89,
+      "max_ms": 84.26,
+      "stdout_bytes": 0,
+      "stderr_bytes": 280
+    },
+    "analyze_sample_json": {
+      "command": ".venv/bin/python -m songscr.cli analyze sample.songscr --format json",
+      "returncode": 0,
+      "runs": 5,
+      "mean_ms": 88.26,
+      "median_ms": 103.45,
+      "min_ms": 61.01,
+      "max_ms": 107.81,
+      "stdout_bytes": 3175,
+      "stderr_bytes": 0
+    },
+    "render_sample": {
+      "command": ".venv/bin/python -m songscr.cli render sample.songscr -o /tmp/songscr-audit-sample.mid",
+      "returncode": 0,
+      "runs": 5,
+      "mean_ms": 106.34,
+      "median_ms": 104.38,
+      "min_ms": 96.93,
+      "max_ms": 122.9,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    },
+    "export_musicxml_fixture": {
+      "command": ".venv/bin/python -m songscr.cli export-musicxml tests/fixtures/musicxml_basic.songscr -o /tmp/songscr-audit-sample.musicxml",
+      "returncode": 0,
+      "runs": 5,
+      "mean_ms": 128.93,
+      "median_ms": 110.64,
+      "min_ms": 106.71,
+      "max_ms": 192.82,
+      "stdout_bytes": 0,
+      "stderr_bytes": 0
+    }
+  },
+  "static_metrics": {
+    "modules": {
+      "songscr/core.py": {
+        "lines": 2058,
+        "functions": 60
+      },
+      "songscr/analyze.py": {
+        "lines": 612,
+        "functions": 15
+      },
+      "songscr/musicxml.py": {
+        "lines": 574,
+        "functions": 12
+      },
+      "songscr/render.py": {
+        "lines": 469,
+        "functions": 7
+      }
+    },
+    "complexity_hotspots": [
+      {
+        "path": "songscr/core.py",
+        "function": "lint_song",
+        "line": 641,
+        "complexity_estimate": 158
+      },
+      {
+        "path": "songscr/render.py",
+        "function": "render_midi_bytes",
+        "line": 71,
+        "complexity_estimate": 87
+      },
+      {
+        "path": "songscr/analyze.py",
+        "function": "analyze_song",
+        "line": 151,
+        "complexity_estimate": 76
+      }
+    ]
+  }
+}
