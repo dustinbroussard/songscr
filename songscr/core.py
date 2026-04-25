@@ -10,6 +10,7 @@ from .automation import auto_param_to_cc, parse_auto
 from .bass import generate_bass_events_from_chords
 from .chords import parse_chord_symbol
 from .guitar_voicings import STANDARD_GUITAR_TUNING, generate_guitar_voicing_details, parse_guitar_tuning, parse_string_set_suffix
+from .song_settings import resolve_bass_octave, resolve_bass_pattern, resolve_bass_rhythm
 from .struct import build_playback_plan, parse_struct_line
 
 TRACK_ALIASES = {
@@ -583,63 +584,8 @@ def resolve_pitch_bend_range(song: Song, section_instance, track: Optional[Track
     return resolved
 
 
-def resolve_bass_pattern(song: Song, section_instance, track: Optional[Track]) -> Optional[str]:
-    resolved: Optional[str] = None
-
-    global_value = _find_last_tag_value(song.tags, "bass pattern")
-    if global_value:
-        resolved = str(global_value).strip().lower()
-
-    section_index = getattr(section_instance, "section_index", None)
-    if isinstance(section_index, int) and 0 <= section_index < len(song.sections):
-        section_value = _find_last_tag_value(song.sections[section_index].tags, "bass pattern")
-        if section_value:
-            resolved = str(section_value).strip().lower()
-
-    if track is not None:
-        track_value = _find_last_tag_value(track.tags, "bass pattern")
-        if track_value:
-            resolved = str(track_value).strip().lower()
-
-    if resolved in ("root", "root5", "octave", "walkup", "pedal"):
-        return resolved
-    return None
-
-
-def resolve_bass_octave(song: Song, section_instance, track: Optional[Track]) -> int:
-    resolved = 2
-    for tag_list in (
-        song.tags,
-        song.sections[getattr(section_instance, "section_index", -1)].tags if isinstance(getattr(section_instance, "section_index", None), int) and 0 <= getattr(section_instance, "section_index", -1) < len(song.sections) else [],
-        track.tags if track is not None else [],
-    ):
-        value = _find_last_tag_value(tag_list, "bass octave")
-        if value is None:
-            continue
-        try:
-            resolved = int(str(value).strip())
-        except ValueError:
-            continue
-    return max(0, min(5, resolved))
-
-
-def resolve_bass_rhythm(song: Song, section_instance, track: Optional[Track]) -> str:
-    resolved = "quarters"
-    for tag_list in (
-        song.tags,
-        song.sections[getattr(section_instance, "section_index", -1)].tags if isinstance(getattr(section_instance, "section_index", None), int) and 0 <= getattr(section_instance, "section_index", -1) < len(song.sections) else [],
-        track.tags if track is not None else [],
-    ):
-        value = _find_last_tag_value(tag_list, "bass rhythm")
-        if value is None:
-            continue
-        val = str(value).strip().lower()
-        if val in ("quarters", "eighths"):
-            resolved = val
-    return resolved
-
-def lint_song(text: str, filename: Optional[str]=None, strict: bool=False) -> List[LintIssue]:
-    song = parse_song(text)
+def lint_song(text: str, filename: Optional[str]=None, strict: bool=False, song: Optional[Song]=None) -> List[LintIssue]:
+    song = song or parse_song(text)
     issues: List[LintIssue] = []
 
     # helpers

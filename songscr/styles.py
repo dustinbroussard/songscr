@@ -3,11 +3,11 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
 from types import SimpleNamespace
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from .ast import Bar, Cell, Section, Song, Track
 from .bass import generate_bass_events_from_chords
-from .core import resolve_bass_octave, resolve_bass_pattern, resolve_bass_rhythm
+from .song_settings import resolve_bass_octave, resolve_bass_pattern, resolve_bass_rhythm
 
 KNOWN_STYLES = {"slowblues", "straightrock", "funklite"}
 KNOWN_DRUM_PATTERNS = {"halftimeshuffle", "straight8rock", "fouronfloor", "funk16kick", "balladsparse"}

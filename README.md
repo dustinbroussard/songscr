@@ -13,6 +13,12 @@ python -m pip install -U pip
 python -m pip install -e .
 ```
 
+For development and tests:
+
+```bash
+python -m pip install -e .[dev]
+```
+
 ## Usage
 
 ### Lint
@@ -56,7 +62,6 @@ songscr stats my_song.songscr
 
 ## Tests
 ```bash
-python -m pip install -r requirements-dev.txt
 python -m pytest -q
 ```
 # songscr

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List
 import re
 
 from .chords import parse_chord_symbol, pitch_class_to_midi
@@ -15,6 +15,18 @@ class BassEvent:
     midi_note: int
     velocity: int = 78
     generated: bool = True
+
+
+def _tokens_for_take(tokens: List[str], take_number: int) -> List[str]:
+    out: List[str] = []
+    active_take = None
+    for token in tokens:
+        if _ALT_ENDING_RE.match(token):
+            active_take = int(token[1:-1])
+            continue
+        if active_take is None or active_take == take_number:
+            out.append(token)
+    return out
 
 
 
@@ -68,7 +80,6 @@ def _approach_note(current_note: int, next_root: int) -> int:
 
 
 def generate_bass_events_from_chords(section, pattern, rhythm, octave, timing_context) -> List[BassEvent]:
-    from .core import _tokens_for_take
     chords_track = section.tracks.get("Chords") or section.tracks.get("Chord")
     if chords_track is None:
         return []

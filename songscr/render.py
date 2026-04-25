@@ -9,17 +9,11 @@ from types import SimpleNamespace
 from .core import (
     _extract_velocity,
     _collect_timed_bass_events_for_bar,
-    _grid_unit_ticks,
     _note_to_midi,
-    _parse_quantize,
-    _parse_tempo,
-    _parse_time_signature,
     _strip_paren_dyn,
     _tokens_for_take,
     build_lyrics_alignment_report,
     has_explicit_pitch_bend_range,
-    lint_song,
-    parse_song,
     resolve_bass_octave,
     resolve_bass_pattern,
     resolve_bass_rhythm,
@@ -36,8 +30,7 @@ from .chords import chord_to_midi_notes, parse_chord_symbol
 from .guitar_voicings import generate_guitar_voicing, parse_string_set_suffix
 from .render_drums import render_drums_bar
 from .render_melody import render_melody_bar
-from .styles import expand_song_templates
-from .struct import build_playback_plan
+from .pipeline import compile_song, raise_for_compilation_errors
 from .midi import MidiEvent, build_midi, build_track, cc, meta_tempo, meta_time_signature, note_off, note_on, program_change
 
 _ALT_ENDING_RE = re.compile(r'^\{(\d+)\}$')
@@ -69,27 +62,18 @@ def _interp_percent(start_percent: int, end_percent: int, start_tick: int, end_t
 
 
 def render_midi_bytes(text: str, seed: Optional[int]=None, strict: bool=False) -> bytes:
-    song = expand_song_templates(parse_song(text))
-    issues = lint_song(text, strict=strict)
-    errors = [i for i in issues if i.level == "ERROR"]
-    if errors:
-        msgs = "\n".join(e.format_line() for e in errors)
-        raise ValueError(f"Lint failed:\n{msgs}")
-    playback_plan, struct_issues = build_playback_plan(song)
-    struct_errors = [i for i in struct_issues if i.level == "ERROR"]
-    if struct_errors:
-        msgs = "\n".join(f'ERROR rule="{e.rule}" {e.message}' for e in struct_errors)
-        raise ValueError(f"Struct planning failed:\n{msgs}")
-
-    num, den = _parse_time_signature(song)
-    bpm = _parse_tempo(song)
-    quantize = _parse_quantize(song)
-
-    ppq = 480
-    ticks_per_beat = ppq
-    beats_per_bar = num * (4 / den)
-    bar_ticks = int(round(beats_per_bar * ticks_per_beat))
-    grid_unit_ticks = _grid_unit_ticks(ticks_per_beat, quantize)
+    compiled = compile_song(text, strict=strict)
+    raise_for_compilation_errors(compiled)
+    song = compiled.expanded_song
+    playback_plan = compiled.playback_plan
+    num, den = compiled.time_signature
+    bpm = compiled.tempo
+    quantize = compiled.quantize
+    ppq = compiled.ppq
+    ticks_per_beat = compiled.ticks_per_beat
+    beats_per_bar = compiled.beats_per_bar
+    bar_ticks = compiled.bar_ticks
+    grid_unit_ticks = compiled.grid_unit_ticks
 
     # deterministic seed
     if seed is None:

@@ -7,12 +7,16 @@ from pathlib import Path
 
 from .analyze import analyze_song, format_analysis_text
 from .core import build_lyrics_alignment_report, emit_song, lint_song, format_song, song_stats
+from .io_utils import write_bytes_atomic, write_text_atomic
 from .render import render_midi_bytes
 from .ast import to_jsonable
 from .core import parse_song
 from .midi_dump import dump_midi_text
-from .musicxml import export_musicxml, export_musicxml_warnings
+from .musicxml import prepare_musicxml_export
 from .styles import expand_song_templates
+
+
+EXPECTED_CLI_EXCEPTIONS = (OSError, ValueError)
 
 def cmd_lint(args: argparse.Namespace) -> int:
     text = Path(args.input).read_text(encoding="utf-8")
@@ -28,17 +32,17 @@ def cmd_fmt(args: argparse.Namespace) -> int:
     text = Path(args.input).read_text(encoding="utf-8")
     formatted = format_song(text)
     out_path = Path(args.output) if args.output else Path(args.input)
-    out_path.write_text(formatted, encoding="utf-8")
+    write_text_atomic(out_path, formatted)
     return 0
 
 def cmd_render(args: argparse.Namespace) -> int:
     text = Path(args.input).read_text(encoding="utf-8")
     try:
         midi_bytes = render_midi_bytes(text, seed=args.seed, strict=args.strict)
-    except Exception as e:
+    except EXPECTED_CLI_EXCEPTIONS as e:
         print(str(e), file=sys.stderr)
         return 1
-    Path(args.output).write_bytes(midi_bytes)
+    write_bytes_atomic(Path(args.output), midi_bytes)
     return 0
 
 def cmd_dump_midi(args: argparse.Namespace) -> int:
@@ -46,11 +50,11 @@ def cmd_dump_midi(args: argparse.Namespace) -> int:
     try:
         midi_bytes = render_midi_bytes(text)
         dumped = dump_midi_text(midi_bytes)
-    except Exception as e:
+    except EXPECTED_CLI_EXCEPTIONS as e:
         print(str(e), file=sys.stderr)
         return 1
     if args.output:
-        Path(args.output).write_text(dumped, encoding="utf-8")
+        write_text_atomic(Path(args.output), dumped)
     else:
         print(dumped, end="")
     return 0
@@ -61,7 +65,7 @@ def cmd_export_ast(args: argparse.Namespace) -> int:
     payload = to_jsonable(song)
     out_str = json.dumps(payload, indent=2)
     if args.output:
-        Path(args.output).write_text(out_str, encoding="utf-8")
+        write_text_atomic(Path(args.output), out_str)
     else:
         print(out_str)
     return 0
@@ -69,14 +73,14 @@ def cmd_export_ast(args: argparse.Namespace) -> int:
 def cmd_export_musicxml(args: argparse.Namespace) -> int:
     text = Path(args.input).read_text(encoding="utf-8")
     try:
-        for warning in export_musicxml_warnings(text):
+        warnings, xml_text = prepare_musicxml_export(text)
+        for warning in warnings:
             print(f"WARN {warning}", file=sys.stderr)
-        xml_text = export_musicxml(text)
-    except Exception as e:
+    except EXPECTED_CLI_EXCEPTIONS as e:
         print(str(e), file=sys.stderr)
         return 1
     if args.output:
-        Path(args.output).write_text(xml_text, encoding="utf-8")
+        write_text_atomic(Path(args.output), xml_text)
     else:
         print(xml_text, end="")
     return 0
@@ -117,7 +121,7 @@ def cmd_expand_templates(args: argparse.Namespace) -> int:
     expanded = expand_song_templates(song)
     expanded_text = format_song(emit_song(expanded))
     if args.output:
-        Path(args.output).write_text(expanded_text, encoding="utf-8")
+        write_text_atomic(Path(args.output), expanded_text)
     else:
         print(expanded_text, end="")
     return 0
@@ -130,7 +134,7 @@ def cmd_analyze(args: argparse.Namespace) -> int:
     else:
         output = format_analysis_text(analysis)
     if args.output:
-        Path(args.output).write_text(output, encoding="utf-8")
+        write_text_atomic(Path(args.output), output)
     else:
         print(output, end="")
     return 0

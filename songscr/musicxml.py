@@ -10,15 +10,10 @@ from .core import (
     _collect_timed_bass_events_for_bar,
     _parse_bracket_group,
     _parse_melody_event_tokens,
-    _parse_quantize,
-    _parse_tempo,
-    _parse_time_signature,
     _strip_paren_dyn,
     _token_is_bracket_group,
     _tokens_for_take,
     build_lyrics_alignment_report,
-    lint_song,
-    parse_song,
     resolve_bass_octave,
     resolve_bass_pattern,
     resolve_bass_rhythm,
@@ -26,10 +21,8 @@ from .core import (
     _melody_grid_mode,
 )
 from .bass import generate_bass_events_from_chords
-from .styles import expand_song_templates
-from .struct import build_playback_plan
+from .pipeline import CompiledSong, compile_song, raise_for_compilation_errors
 
-_ALT_ENDING_RE = re.compile(r"^\{(\d+)\}$")
 _ROOT_RE = re.compile(r"^([A-G])([#b]?)")
 
 
@@ -237,23 +230,14 @@ def _append_note(
             ET.SubElement(lyric_el, "text").text = lyric_text
 
 
-def _collect_flattened_content(text: str):
-    song = expand_song_templates(parse_song(text))
-    issues = lint_song(text)
-    errors = [issue for issue in issues if issue.level == "ERROR"]
-    if errors:
-        msgs = "\n".join(issue.format_line() for issue in errors)
-        raise ValueError(f"Lint failed:\n{msgs}")
+def _collect_flattened_content(compiled: CompiledSong):
+    raise_for_compilation_errors(compiled)
 
-    playback_plan, struct_issues = build_playback_plan(song)
-    struct_errors = [issue for issue in struct_issues if issue.level == "ERROR"]
-    if struct_errors:
-        msgs = "\n".join(f'ERROR rule="{issue.rule}" {issue.message}' for issue in struct_errors)
-        raise ValueError(f"Struct planning failed:\n{msgs}")
-
-    num, den = _parse_time_signature(song)
-    bpm = _parse_tempo(song)
-    quantize = _parse_quantize(song)
+    song = compiled.expanded_song
+    playback_plan = compiled.playback_plan
+    num, den = compiled.time_signature
+    bpm = compiled.tempo
+    quantize = compiled.quantize
     divisions = 4 if quantize == 16 else 2
     beats_per_bar = int(round(num * (4 / den)))
     measure_duration = beats_per_bar * divisions
@@ -454,18 +438,27 @@ def _collect_flattened_content(text: str):
     }
 
 
-def export_musicxml_warnings(text: str) -> List[str]:
-    content = _collect_flattened_content(text)
+def prepare_musicxml_export(text: str) -> Tuple[List[str], str]:
+    content = _collect_flattened_content(compile_song(text))
     warnings: List[str] = []
     if not content["has_melody_track"]:
         warnings.append("No Melody track found; exporting chords only.")
     if not content["has_chords_track"]:
         warnings.append("No Chords track found; exporting melody only.")
+    return warnings, _render_musicxml(content)
+
+
+def export_musicxml_warnings(text: str) -> List[str]:
+    warnings, _ = prepare_musicxml_export(text)
     return warnings
 
 
 def export_musicxml(text: str) -> str:
-    content = _collect_flattened_content(text)
+    _, xml_text = prepare_musicxml_export(text)
+    return xml_text
+
+
+def _render_musicxml(content) -> str:
     num = int(content["num"])
     den = int(content["den"])
     bpm = int(content["bpm"])

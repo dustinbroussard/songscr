@@ -4,7 +4,7 @@ from collections import Counter, defaultdict
 import json
 import re
 from types import SimpleNamespace
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from .core import (
     _collect_timed_bass_events_for_bar,
@@ -13,25 +13,17 @@ from .core import (
     _lyrics_token_estimated_syllables,
     _parse_bracket_group,
     _parse_melody_event_tokens,
-    _parse_quantize,
-    _parse_tempo,
-    _parse_time_signature,
     _strip_paren_dyn,
     _token_is_bracket_group,
     _tokens_for_take,
     build_lyrics_alignment_report,
-    lint_song,
-    parse_song,
-    resolve_bass_octave,
-    resolve_bass_pattern,
-    resolve_bass_rhythm,
     resolve_chord_range,
     resolve_chord_voicing,
     resolve_scoped_tag_value,
 )
 from .chords import parse_chord_symbol
-from .styles import _track_has_content, expand_song_templates, resolve_style_context
-from .struct import build_playback_plan
+from .pipeline import compile_song
+from .styles import _track_has_content, resolve_style_context
 
 DRUM_TOKENS = ("K", "S", "H", "O", "C", "T")
 DRUM_NAMES = {"K": "kick", "S": "snare", "H": "closed_hat", "O": "open_hat", "C": "crash", "T": "tom"}
@@ -149,24 +141,26 @@ def _template_generation_flags(source_song, expanded_song, section_index: int) -
 
 
 def analyze_song(text: str) -> Dict[str, Any]:
-    source_song = parse_song(text)
-    expanded_song = expand_song_templates(parse_song(text))
-    playback_plan, struct_issues = build_playback_plan(expanded_song)
-    lint_issues = lint_song(text)
+    compiled = compile_song(text)
+    source_song = compiled.source_song
+    expanded_song = compiled.expanded_song
+    playback_plan = compiled.playback_plan
+    struct_issues = compiled.struct_issues
+    lint_issues = compiled.lint_issues
     all_issues = list(lint_issues)
     for issue in struct_issues:
         all_issues.append(
             SimpleNamespace(level=issue.level, rule=issue.rule, message=issue.message, token=issue.token, expected=issue.expected)
         )
 
-    tempo = _parse_tempo(expanded_song)
-    num, den = _parse_time_signature(expanded_song)
-    quantize = _parse_quantize(expanded_song)
-    beats_per_bar = num * (4 / den)
-    ppq = 480
-    ticks_per_beat = ppq
-    bar_ticks = int(round(beats_per_bar * ticks_per_beat))
-    grid_unit_ticks = _grid_unit_ticks(ticks_per_beat, quantize)
+    tempo = compiled.tempo
+    num, den = compiled.time_signature
+    quantize = compiled.quantize
+    beats_per_bar = compiled.beats_per_bar
+    ppq = compiled.ppq
+    ticks_per_beat = compiled.ticks_per_beat
+    bar_ticks = compiled.bar_ticks
+    grid_unit_ticks = compiled.grid_unit_ticks
 
     labels_by_section = _section_labels(source_song)
     repeated_instances = sum(1 for item in playback_plan if item.instance_number > 1)
@@ -321,6 +315,9 @@ def analyze_song(text: str) -> Dict[str, Any]:
             for bar in chord_track.bars:
                 filtered_cells = _cells_for_take(bar, section_instance.take_number)
                 chord_changes = 0
+                voicing_mode = resolve_chord_voicing(
+                    expanded_song, section_instance.section_index, chord_track, bar
+                )
                 for cell in filtered_cells:
                     if not cell.tokens:
                         continue
@@ -336,10 +333,10 @@ def analyze_song(text: str) -> Dict[str, Any]:
                     unique_chords.add(normalized)
                     if spec.slash_bass:
                         slash_chords += 1
-                    use_guitar = "{" in token or resolve_chord_voicing(expanded_song, section_instance.section_index, chord_track, bar) == "guitar"
+                    use_guitar = "{" in token or voicing_mode == "guitar"
                     if use_guitar:
                         guitar_voicing_usage += 1
-                    voicing_modes.add(resolve_chord_voicing(expanded_song, section_instance.section_index, chord_track, bar))
+                    voicing_modes.add(voicing_mode)
                     chord_range_value = resolve_scoped_tag_value(expanded_song, section_instance.section_index, chord_track, bar, "chord range")
                     if chord_range_value:
                         chord_range_values.add(str(chord_range_value))
