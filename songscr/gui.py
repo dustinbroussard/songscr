@@ -21,23 +21,29 @@ from .styles import expand_song_templates
 
 # Centralized theme tokens keep the AMOLED palette easy to change later.
 GUI_THEME = {
-    "bg": "#000000",
-    "panel": "#000000",
-    "panel_alt": "#050505",
-    "border": "#FFFFFF",
-    "text": "#FFFFFF",
-    "muted_text": "#E0E0E0",
-    "placeholder": "#7A7A7A",
-    "hover": "#FFFFFF",
-    "hover_text": "#000000",
-    "active": "#E0E0E0",
-    "active_text": "#000000",
-    "accent": "#FFFFFF",
+    "bg": "#0B1120",
+    "bg_alt": "#111827",
+    "panel": "#121A2B",
+    "panel_alt": "#182235",
+    "panel_elevated": "#1D2940",
+    "border": "#2B3854",
+    "border_strong": "#47597D",
+    "shadow": "#060A13",
+    "text": "#F8FAFC",
+    "muted_text": "#C7D2E4",
+    "placeholder": "#6B7A94",
+    "hover": "#263755",
+    "hover_text": "#FFFFFF",
+    "active": "#7C9BFF",
+    "active_text": "#08111F",
+    "accent": "#7C9BFF",
+    "accent_soft": "#B8C7FF",
+    "accent_alt": "#5EEAD4",
     "danger": "#FF5F5F",
     "success": "#9FE870",
     "font": "TkDefaultFont",
     "mono": "TkFixedFont",
-    "radius": 12,
+    "radius": 16,
     "border_width": 1,
     "window_width": 1380,
     "window_height": 900,
@@ -127,73 +133,98 @@ class SongScriptService:
 
 class ThemedCard(tk.Frame):
     def __init__(self, master, title: str, **kwargs):
-        super().__init__(
-            master,
-            bg=GUI_THEME["panel"],
-            highlightbackground=GUI_THEME["border"],
-            highlightthickness=GUI_THEME["border_width"],
-            bd=0,
-            **kwargs,
-        )
+        super().__init__(master, bg=GUI_THEME["bg"], bd=0, highlightthickness=0, **kwargs)
+        self.configure(padx=0, pady=0)
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
-        self.title_label = tk.Label(
+        self.shadow = tk.Frame(self, bg=GUI_THEME["shadow"], bd=0, highlightthickness=0)
+        self.shadow.place(relx=0, rely=0, relwidth=1, relheight=1, x=4, y=6)
+        self.surface = tk.Frame(
             self,
+            bg=GUI_THEME["panel"],
+            highlightbackground=GUI_THEME["border"],
+            highlightthickness=1,
+            bd=0,
+        )
+        self.surface.place(relx=0, rely=0, relwidth=1, relheight=1)
+        self.title_label = tk.Label(
+            self.surface,
             text=title,
             bg=GUI_THEME["panel"],
             fg=GUI_THEME["text"],
             font=(GUI_THEME["font"], 11, "bold"),
             anchor="w",
-            padx=14,
-            pady=10,
+            padx=18,
+            pady=14,
         )
         self.title_label.grid(row=0, column=0, sticky="ew")
+        self.accent_line = tk.Frame(self.surface, bg=GUI_THEME["accent"], height=2)
+        self.accent_line.grid(row=1, column=0, sticky="ew", padx=18)
+        self.content = tk.Frame(self.surface, bg=GUI_THEME["panel"], bd=0, highlightthickness=0)
+        self.content.grid(row=2, column=0, sticky="nsew")
+        self.surface.grid_columnconfigure(0, weight=1)
+        self.surface.grid_rowconfigure(2, weight=1)
+
+    def __getattr__(self, item):
+        if item in {"tk", "_w", "children", "master"}:
+            raise AttributeError(item)
+        return getattr(self.content, item)
 
 
-class PlaceholderEntry(tk.Entry):
+class PlaceholderEntry(tk.Frame):
     def __init__(self, master, placeholder: str, textvariable=None, **kwargs):
         self.placeholder = placeholder
         self.placeholder_color = GUI_THEME["placeholder"]
         self.default_fg = GUI_THEME["text"]
         self._showing_placeholder = False
-        super().__init__(
-            master,
+        super().__init__(master, bg=GUI_THEME["bg"], bd=0, highlightthickness=0)
+        self.shadow = tk.Frame(self, bg=GUI_THEME["shadow"], bd=0, highlightthickness=0, height=1)
+        self.shadow.place(relx=0, rely=0, relwidth=1, relheight=1, y=3)
+        self.container = tk.Frame(
+            self,
+            bg=GUI_THEME["panel_elevated"],
+            highlightbackground=GUI_THEME["border"],
+            highlightthickness=1,
+            bd=0,
+        )
+        self.container.place(relx=0, rely=0, relwidth=1, relheight=1)
+        self.entry = tk.Entry(
+            self.container,
             textvariable=textvariable,
-            bg=GUI_THEME["bg"],
+            bg=GUI_THEME["panel_elevated"],
             fg=self.default_fg,
             insertbackground=GUI_THEME["text"],
             relief="flat",
-            highlightbackground=GUI_THEME["border"],
-            highlightcolor=GUI_THEME["border"],
-            highlightthickness=1,
             bd=0,
+            highlightthickness=0,
             **kwargs,
         )
-        self.bind("<FocusIn>", self._clear_placeholder)
-        self.bind("<FocusOut>", self._apply_placeholder)
+        self.entry.pack(fill="both", expand=True, padx=14, pady=10)
+        self.entry.bind("<FocusIn>", self._clear_placeholder)
+        self.entry.bind("<FocusOut>", self._apply_placeholder)
         self._apply_placeholder()
 
     def _apply_placeholder(self, _event=None):
-        if not self.get():
+        if not self.entry.get():
             self._showing_placeholder = True
-            self.delete(0, "end")
-            self.insert(0, self.placeholder)
-            self.configure(fg=self.placeholder_color)
+            self.entry.delete(0, "end")
+            self.entry.insert(0, self.placeholder)
+            self.entry.configure(fg=self.placeholder_color)
 
     def _clear_placeholder(self, _event=None):
         if self._showing_placeholder:
             self._showing_placeholder = False
-            self.delete(0, "end")
-            self.configure(fg=self.default_fg)
+            self.entry.delete(0, "end")
+            self.entry.configure(fg=self.default_fg)
 
     def value(self) -> str:
-        return "" if self._showing_placeholder else self.get().strip()
+        return "" if self._showing_placeholder else self.entry.get().strip()
 
     def set_value(self, value: str) -> None:
         self._showing_placeholder = False
-        self.configure(fg=self.default_fg)
-        self.delete(0, "end")
-        self.insert(0, value)
+        self.entry.configure(fg=self.default_fg)
+        self.entry.delete(0, "end")
+        self.entry.insert(0, value)
 
 
 class RoundedButton(tk.Canvas):
@@ -202,7 +233,7 @@ class RoundedButton(tk.Canvas):
             master,
             width=width,
             height=height,
-            bg=GUI_THEME["panel"],
+            bg=master.cget("bg"),
             highlightthickness=0,
             bd=0,
             relief="flat",
@@ -239,29 +270,40 @@ class RoundedButton(tk.Canvas):
 
     def _colors(self):
         if self.is_pressed:
-            return GUI_THEME["active"], GUI_THEME["active_text"]
+            return GUI_THEME["accent_soft"], GUI_THEME["active_text"], GUI_THEME["accent"]
         if self.is_hover:
-            return GUI_THEME["hover"], GUI_THEME["hover_text"]
+            return GUI_THEME["hover"], GUI_THEME["hover_text"], GUI_THEME["accent"]
         if self.accent:
-            return GUI_THEME["active"], GUI_THEME["active_text"]
-        return GUI_THEME["panel_alt"], GUI_THEME["text"]
+            return GUI_THEME["active"], GUI_THEME["active_text"], GUI_THEME["accent_soft"]
+        return GUI_THEME["panel_elevated"], GUI_THEME["text"], GUI_THEME["border_strong"]
 
     def _draw(self):
         self.delete("all")
-        fill, text_color = self._colors()
+        fill, text_color, outline = self._colors()
+        self._rounded_rect(
+            4,
+            6,
+            self.width - 4,
+            self.height - 2,
+            GUI_THEME["radius"],
+            fill=GUI_THEME["shadow"],
+            outline=GUI_THEME["shadow"],
+            width=1,
+        )
         self._rounded_rect(
             2,
             2,
             self.width - 2,
-            self.height - 2,
+            self.height - 6,
             GUI_THEME["radius"],
             fill=fill,
-            outline=GUI_THEME["border"],
+            outline=outline,
             width=1,
         )
+        self.create_line(16, 8, self.width - 16, 8, fill=GUI_THEME["accent_soft"] if self.accent or self.is_hover else GUI_THEME["border"], width=1)
         self.create_text(
             self.width / 2,
-            self.height / 2,
+            (self.height / 2) - 2,
             text=self.text,
             fill=text_color,
             font=(GUI_THEME["font"], 10, "bold"),
@@ -289,7 +331,7 @@ class RoundedButton(tk.Canvas):
 
 class MonoToggle(tk.Canvas):
     def __init__(self, master, variable: tk.BooleanVar, command=None):
-        super().__init__(master, width=52, height=26, bg=GUI_THEME["panel"], highlightthickness=0)
+        super().__init__(master, width=58, height=30, bg=GUI_THEME["panel"], highlightthickness=0)
         self.variable = variable
         self.command = command
         self.bind("<Button-1>", self._toggle)
@@ -299,11 +341,13 @@ class MonoToggle(tk.Canvas):
     def _draw(self):
         self.delete("all")
         enabled = self.variable.get()
-        fill = GUI_THEME["border"] if enabled else GUI_THEME["panel_alt"]
-        knob = GUI_THEME["bg"] if enabled else GUI_THEME["text"]
-        self.create_oval(1, 1, 51, 25, fill=fill, outline=GUI_THEME["border"], width=1)
-        knob_x = 28 if enabled else 4
-        self.create_oval(knob_x, 4, knob_x + 18, 22, fill=knob, outline=GUI_THEME["border"], width=1)
+        fill = GUI_THEME["active"] if enabled else GUI_THEME["panel_elevated"]
+        knob = GUI_THEME["bg"] if enabled else GUI_THEME["muted_text"]
+        outline = GUI_THEME["accent_soft"] if enabled else GUI_THEME["border"]
+        self.create_oval(4, 6, 54, 28, fill=GUI_THEME["shadow"], outline=GUI_THEME["shadow"])
+        self.create_oval(2, 2, 56, 26, fill=fill, outline=outline, width=1)
+        knob_x = 30 if enabled else 6
+        self.create_oval(knob_x, 5, knob_x + 20, 25, fill=knob, outline=outline, width=1)
 
     def _toggle(self, _event):
         self.variable.set(not self.variable.get())
@@ -313,15 +357,17 @@ class MonoToggle(tk.Canvas):
 
 class NavButton(tk.Frame):
     def __init__(self, master, icon: str, label: str, command):
-        super().__init__(master, bg=GUI_THEME["panel"])
+        super().__init__(master, bg=GUI_THEME["bg"])
         self.command = command
         self.active = False
-        self.inner = tk.Frame(self, bg=GUI_THEME["panel"], highlightthickness=1, highlightbackground=GUI_THEME["border"])
+        self.inner = tk.Frame(self, bg=GUI_THEME["panel"], highlightthickness=1, highlightbackground=GUI_THEME["border"], bd=0)
         self.inner.pack(fill="x", padx=8, pady=6)
-        self.icon_label = tk.Label(self.inner, text=icon, bg=GUI_THEME["panel"], fg=GUI_THEME["text"], font=(GUI_THEME["font"], 14))
+        self.glow = tk.Frame(self.inner, bg=GUI_THEME["shadow"], height=3)
+        self.glow.pack(fill="x")
+        self.icon_label = tk.Label(self.inner, text=icon, bg=GUI_THEME["panel"], fg=GUI_THEME["accent_soft"], font=(GUI_THEME["font"], 15))
         self.icon_label.pack(pady=(8, 0))
         self.text_label = tk.Label(self.inner, text=label, bg=GUI_THEME["panel"], fg=GUI_THEME["muted_text"], font=(GUI_THEME["font"], 9))
-        self.text_label.pack(pady=(0, 8))
+        self.text_label.pack(pady=(2, 10))
         for widget in (self, self.inner, self.icon_label, self.text_label):
             widget.bind("<Button-1>", self._on_click)
             widget.bind("<Enter>", self._hover_in)
@@ -329,18 +375,20 @@ class NavButton(tk.Frame):
 
     def set_active(self, active: bool):
         self.active = active
-        bg = GUI_THEME["hover"] if active else GUI_THEME["panel"]
-        fg = GUI_THEME["hover_text"] if active else GUI_THEME["text"]
-        muted = GUI_THEME["hover_text"] if active else GUI_THEME["muted_text"]
-        self.inner.configure(bg=bg)
+        bg = GUI_THEME["active"] if active else GUI_THEME["panel"]
+        fg = GUI_THEME["active_text"] if active else GUI_THEME["accent_soft"]
+        muted = GUI_THEME["active_text"] if active else GUI_THEME["muted_text"]
+        border = GUI_THEME["accent_soft"] if active else GUI_THEME["border"]
+        self.inner.configure(bg=bg, highlightbackground=border)
+        self.glow.configure(bg=GUI_THEME["shadow"] if not active else GUI_THEME["accent_soft"])
         self.icon_label.configure(bg=bg, fg=fg)
         self.text_label.configure(bg=bg, fg=muted)
 
     def _hover_in(self, _event):
         if not self.active:
-            self.inner.configure(bg=GUI_THEME["panel_alt"])
-            self.icon_label.configure(bg=GUI_THEME["panel_alt"])
-            self.text_label.configure(bg=GUI_THEME["panel_alt"])
+            self.inner.configure(bg=GUI_THEME["hover"], highlightbackground=GUI_THEME["border_strong"])
+            self.icon_label.configure(bg=GUI_THEME["hover"])
+            self.text_label.configure(bg=GUI_THEME["hover"])
 
     def _hover_out(self, _event):
         if not self.active:
@@ -363,7 +411,7 @@ class SongScriptGUI(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("SongScript Studio")
-        self.configure(bg=GUI_THEME["border"])
+        self.configure(bg=GUI_THEME["shadow"])
         self.overrideredirect(True)
         self.minsize(1120, 760)
         self._center_window(GUI_THEME["window_width"], GUI_THEME["window_height"])
@@ -392,12 +440,12 @@ class SongScriptGUI(tk.Tk):
         style.theme_use("clam")
         style.configure(
             "Mono.Vertical.TScrollbar",
-            background=GUI_THEME["panel_alt"],
-            troughcolor=GUI_THEME["bg"],
+            background=GUI_THEME["panel_elevated"],
+            troughcolor=GUI_THEME["panel"],
             bordercolor=GUI_THEME["border"],
-            darkcolor=GUI_THEME["panel_alt"],
-            lightcolor=GUI_THEME["panel_alt"],
-            arrowcolor=GUI_THEME["text"],
+            darkcolor=GUI_THEME["panel_elevated"],
+            lightcolor=GUI_THEME["panel_elevated"],
+            arrowcolor=GUI_THEME["accent_soft"],
             relief="flat",
         )
 
@@ -410,13 +458,13 @@ class SongScriptGUI(tk.Tk):
 
     def _build_window_shell(self):
         self.shell = tk.Frame(self, bg=GUI_THEME["bg"])
-        self.shell.pack(fill="both", expand=True, padx=1, pady=1)
+        self.shell.pack(fill="both", expand=True, padx=8, pady=8)
         self.shell.grid_rowconfigure(1, weight=1)
         self.shell.grid_columnconfigure(0, weight=1)
 
     def _build_titlebar(self):
-        self.titlebar = tk.Frame(self.shell, bg=GUI_THEME["bg"], height=46, highlightbackground=GUI_THEME["border"], highlightthickness=1)
-        self.titlebar.grid(row=0, column=0, sticky="ew")
+        self.titlebar = tk.Frame(self.shell, bg=GUI_THEME["panel"], height=54, highlightbackground=GUI_THEME["border"], highlightthickness=1)
+        self.titlebar.grid(row=0, column=0, sticky="ew", pady=(0, 12))
         self.titlebar.grid_columnconfigure(1, weight=1)
         self.titlebar.bind("<ButtonPress-1>", self._start_move)
         self.titlebar.bind("<B1-Motion>", self._on_move)
@@ -424,10 +472,11 @@ class SongScriptGUI(tk.Tk):
         brand = tk.Label(
             self.titlebar,
             text="SONGSCR STUDIO",
-            bg=GUI_THEME["bg"],
+            bg=GUI_THEME["panel"],
             fg=GUI_THEME["text"],
-            font=(GUI_THEME["font"], 11, "bold"),
-            padx=16,
+            font=(GUI_THEME["font"], 12, "bold"),
+            padx=18,
+            pady=8,
         )
         brand.grid(row=0, column=0, sticky="w")
         brand.bind("<ButtonPress-1>", self._start_move)
@@ -436,20 +485,20 @@ class SongScriptGUI(tk.Tk):
         self.window_state = tk.Label(
             self.titlebar,
             textvariable=self.status_var,
-            bg=GUI_THEME["bg"],
+            bg=GUI_THEME["panel"],
             fg=GUI_THEME["muted_text"],
             font=(GUI_THEME["font"], 10),
         )
         self.window_state.grid(row=0, column=1, sticky="w")
 
-        button_bar = tk.Frame(self.titlebar, bg=GUI_THEME["bg"])
-        button_bar.grid(row=0, column=2, sticky="e", padx=8)
+        button_bar = tk.Frame(self.titlebar, bg=GUI_THEME["panel"])
+        button_bar.grid(row=0, column=2, sticky="e", padx=10)
         for label, command in (("—", self.iconify), ("✕", self.destroy)):
-            btn = tk.Label(button_bar, text=label, bg=GUI_THEME["bg"], fg=GUI_THEME["text"], width=4, font=(GUI_THEME["font"], 11, "bold"))
-            btn.pack(side="left", padx=2, pady=6)
+            btn = tk.Label(button_bar, text=label, bg=GUI_THEME["panel_elevated"], fg=GUI_THEME["text"], width=4, font=(GUI_THEME["font"], 11, "bold"))
+            btn.pack(side="left", padx=4, pady=10)
             btn.bind("<Button-1>", lambda _event, fn=command: fn())
             btn.bind("<Enter>", lambda event: event.widget.configure(bg=GUI_THEME["hover"], fg=GUI_THEME["hover_text"]))
-            btn.bind("<Leave>", lambda event: event.widget.configure(bg=GUI_THEME["bg"], fg=GUI_THEME["text"]))
+            btn.bind("<Leave>", lambda event: event.widget.configure(bg=GUI_THEME["panel_elevated"], fg=GUI_THEME["text"]))
 
     def _build_sidebar(self):
         self.body = tk.Frame(self.shell, bg=GUI_THEME["bg"])
@@ -459,13 +508,23 @@ class SongScriptGUI(tk.Tk):
 
         self.sidebar = tk.Frame(
             self.body,
-            bg=GUI_THEME["bg"],
-            width=92,
+            bg=GUI_THEME["panel"],
+            width=112,
             highlightbackground=GUI_THEME["border"],
             highlightthickness=1,
         )
-        self.sidebar.grid(row=0, column=0, sticky="nsw")
+        self.sidebar.grid(row=0, column=0, sticky="nsw", padx=(0, 14))
         self.sidebar.grid_propagate(False)
+
+        sidebar_header = tk.Label(
+            self.sidebar,
+            text="NAV",
+            bg=GUI_THEME["panel"],
+            fg=GUI_THEME["placeholder"],
+            font=(GUI_THEME["font"], 9, "bold"),
+            pady=14,
+        )
+        sidebar_header.pack(fill="x")
 
         self.pages: dict[str, tk.Frame] = {}
         self.nav_buttons: dict[str, NavButton] = {}
@@ -477,12 +536,12 @@ class SongScriptGUI(tk.Tk):
         ]
         for page_id, icon, label in nav_spec:
             button = NavButton(self.sidebar, icon, label, command=lambda page_id=page_id: self.show_page(page_id))
-            button.pack(fill="x", pady=2)
+            button.pack(fill="x", pady=4)
             self.nav_buttons[page_id] = button
 
     def _build_pages(self):
         self.page_host = tk.Frame(self.body, bg=GUI_THEME["bg"])
-        self.page_host.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
+        self.page_host.grid(row=0, column=1, sticky="nsew")
         self.page_host.grid_rowconfigure(0, weight=1)
         self.page_host.grid_columnconfigure(0, weight=1)
 
@@ -501,36 +560,36 @@ class SongScriptGUI(tk.Tk):
         self.pages["workspace"] = page
 
         editor_card = ThemedCard(page, "Source Workspace")
-        editor_card.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
-        editor_card.grid_columnconfigure(0, weight=1)
-        editor_card.grid_rowconfigure(2, weight=1)
+        editor_card.grid(row=0, column=0, sticky="nsew", padx=(0, 14))
+        editor_card.content.grid_columnconfigure(0, weight=1)
+        editor_card.content.grid_rowconfigure(1, weight=1)
 
-        path_row = tk.Frame(editor_card, bg=GUI_THEME["panel"])
-        path_row.grid(row=1, column=0, sticky="ew", padx=14, pady=(0, 10))
+        path_row = tk.Frame(editor_card.content, bg=GUI_THEME["panel"])
+        path_row.grid(row=0, column=0, sticky="ew", padx=18, pady=(18, 12))
         path_row.grid_columnconfigure(0, weight=1)
         self.file_entry = PlaceholderEntry(path_row, "Open a .songscr file or work from the editor buffer")
-        self.file_entry.grid(row=0, column=0, sticky="ew", padx=(0, 8))
-        RoundedButton(path_row, "Open", self.open_file, width=90).grid(row=0, column=1, sticky="e")
+        self.file_entry.grid(row=0, column=0, sticky="ew", padx=(0, 10), ipady=2)
+        RoundedButton(path_row, "Open", self.open_file, width=96).grid(row=0, column=1, sticky="e")
 
-        editor_frame = tk.Frame(editor_card, bg=GUI_THEME["panel"])
-        editor_frame.grid(row=2, column=0, sticky="nsew", padx=14, pady=(0, 14))
+        editor_frame = tk.Frame(editor_card.content, bg=GUI_THEME["panel"])
+        editor_frame.grid(row=1, column=0, sticky="nsew", padx=18, pady=(0, 18))
         editor_frame.grid_rowconfigure(0, weight=1)
         editor_frame.grid_columnconfigure(0, weight=1)
         self.editor = tk.Text(
             editor_frame,
             wrap="none",
             undo=True,
-            bg=GUI_THEME["bg"],
+            bg=GUI_THEME["bg_alt"],
             fg=GUI_THEME["text"],
             insertbackground=GUI_THEME["text"],
-            selectbackground=GUI_THEME["text"],
-            selectforeground=GUI_THEME["bg"],
+            selectbackground=GUI_THEME["accent"],
+            selectforeground=GUI_THEME["active_text"],
             relief="flat",
             highlightbackground=GUI_THEME["border"],
             highlightthickness=1,
             font=(GUI_THEME["mono"], 11),
-            padx=14,
-            pady=14,
+            padx=18,
+            pady=18,
         )
         self.editor.grid(row=0, column=0, sticky="nsew")
         editor_scroll = ttk.Scrollbar(editor_frame, orient="vertical", style="Mono.Vertical.TScrollbar", command=self.editor.yview)
@@ -539,15 +598,28 @@ class SongScriptGUI(tk.Tk):
 
         action_card = ThemedCard(page, "Actions")
         action_card.grid(row=0, column=1, sticky="nsew")
-        action_card.grid_columnconfigure(0, weight=1)
+        action_card.content.grid_columnconfigure(0, weight=1)
 
-        strict_row = tk.Frame(action_card, bg=GUI_THEME["panel"])
-        strict_row.grid(row=1, column=0, sticky="ew", padx=14, pady=(4, 8))
+        hero = tk.Label(
+            action_card.content,
+            text="Compile, inspect, and export from a single workspace with non-blocking background tasks.",
+            justify="left",
+            bg=GUI_THEME["panel"],
+            fg=GUI_THEME["muted_text"],
+            font=(GUI_THEME["font"], 10),
+            padx=18,
+            pady=18,
+            wraplength=280,
+        )
+        hero.grid(row=0, column=0, sticky="ew")
+
+        strict_row = tk.Frame(action_card.content, bg=GUI_THEME["panel"])
+        strict_row.grid(row=1, column=0, sticky="ew", padx=18, pady=(0, 10))
         tk.Label(strict_row, text="Strict lint", bg=GUI_THEME["panel"], fg=GUI_THEME["muted_text"]).pack(side="left")
         MonoToggle(strict_row, self.strict_mode).pack(side="right")
 
-        button_grid = tk.Frame(action_card, bg=GUI_THEME["panel"])
-        button_grid.grid(row=2, column=0, sticky="nsew", padx=14, pady=(0, 12))
+        button_grid = tk.Frame(action_card.content, bg=GUI_THEME["panel"])
+        button_grid.grid(row=2, column=0, sticky="nsew", padx=18, pady=(0, 14))
         for idx in range(2):
             button_grid.grid_columnconfigure(idx, weight=1)
         buttons = [
@@ -568,14 +640,15 @@ class SongScriptGUI(tk.Tk):
             )
 
         notes = tk.Label(
-            action_card,
-            text="Font-based glyphs keep the UI sharp without external image assets.\nBackground execution keeps the event loop responsive during render and analysis.",
+            action_card.content,
+            text="Soft elevation and restrained contrast keep the interface readable without feeling flat.\nEvery action remains threaded to avoid UI stalls during heavy compiler work.",
             justify="left",
             bg=GUI_THEME["panel"],
             fg=GUI_THEME["muted_text"],
             font=(GUI_THEME["font"], 9),
-            padx=14,
+            padx=18,
             pady=8,
+            wraplength=280,
         )
         notes.grid(row=3, column=0, sticky="ew")
 
@@ -588,27 +661,27 @@ class SongScriptGUI(tk.Tk):
         self.pages["analysis"] = page
 
         summary_card = ThemedCard(page, "Execution Summary")
-        summary_card.grid(row=0, column=0, sticky="nsew", padx=(0, 10), pady=(0, 10))
+        summary_card.grid(row=0, column=0, sticky="nsew", padx=(0, 14), pady=(0, 14))
         self.summary_label = tk.Label(
-            summary_card,
+            summary_card.content,
             textvariable=self.summary_var,
             justify="left",
             bg=GUI_THEME["panel"],
             fg=GUI_THEME["muted_text"],
             font=(GUI_THEME["mono"], 10),
-            padx=14,
+            padx=18,
             pady=18,
             anchor="w",
         )
-        self.summary_label.grid(row=1, column=0, sticky="nsew")
+        self.summary_label.grid(row=0, column=0, sticky="nsew")
 
         stats_card = ThemedCard(page, "Structured Metrics")
-        stats_card.grid(row=0, column=1, sticky="nsew", pady=(0, 10))
-        self.stats_view = self._build_readonly_text(stats_card, row=1, padx=14, pady=(0, 14))
+        stats_card.grid(row=0, column=1, sticky="nsew", pady=(0, 14))
+        self.stats_view = self._build_readonly_text(stats_card.content, row=0, padx=18, pady=(18, 18))
 
         report_card = ThemedCard(page, "Detailed Review")
         report_card.grid(row=1, column=0, columnspan=2, sticky="nsew")
-        self.analysis_view = self._build_readonly_text(report_card, row=1, padx=14, pady=(0, 14))
+        self.analysis_view = self._build_readonly_text(report_card.content, row=0, padx=18, pady=(18, 18))
 
     def _build_exports_page(self):
         page = tk.Frame(self.page_host, bg=GUI_THEME["bg"])
@@ -628,16 +701,16 @@ class SongScriptGUI(tk.Tk):
             card = ThemedCard(page, title)
             row = index // 2
             col = index % 2
-            card.grid(row=row, column=col, sticky="nsew", padx=(0 if col == 0 else 10, 0), pady=(0 if row == 0 else 10, 0))
-            card.grid_columnconfigure(0, weight=1)
+            card.grid(row=row, column=col, sticky="nsew", padx=(0 if col == 0 else 14, 0), pady=(0 if row == 0 else 14, 0))
+            card.content.grid_columnconfigure(0, weight=1)
             default_path = str((Path.cwd() / default_name).resolve())
-            entry = PlaceholderEntry(card, default_path)
-            entry.grid(row=1, column=0, sticky="ew", padx=14, pady=(4, 8))
+            entry = PlaceholderEntry(card.content, default_path)
+            entry.grid(row=0, column=0, sticky="ew", padx=18, pady=(18, 10), ipady=2)
             entry.set_value(default_path)
             self.export_entries[title] = entry
 
-            actions = tk.Frame(card, bg=GUI_THEME["panel"])
-            actions.grid(row=2, column=0, sticky="ew", padx=14, pady=(0, 14))
+            actions = tk.Frame(card.content, bg=GUI_THEME["panel"])
+            actions.grid(row=1, column=0, sticky="ew", padx=18, pady=(0, 18))
             actions.grid_columnconfigure(0, weight=1)
             RoundedButton(actions, "Browse", lambda entry=entry: self.choose_output_path(entry), width=110).grid(row=0, column=0, sticky="w")
             RoundedButton(actions, "Run", command, width=110, accent=True).grid(row=0, column=1, sticky="e")
@@ -652,19 +725,19 @@ class SongScriptGUI(tk.Tk):
         card = ThemedCard(page, "Interface Notes")
         card.grid(row=0, column=0, sticky="nsew")
         body = tk.Label(
-            card,
+            card.content,
             justify="left",
             anchor="nw",
             bg=GUI_THEME["panel"],
             fg=GUI_THEME["muted_text"],
             font=(GUI_THEME["font"], 10),
-            padx=14,
-            pady=14,
+            padx=18,
+            pady=18,
             text=(
                 "Design decisions\n"
-                "- Pure black surfaces reduce OLED power usage.\n"
-                "- White and light-gray text maintain maximum contrast.\n"
-                "- Cards, inputs, and controls use a uniform 1px border system.\n"
+                "- Layered surfaces and restrained shadows create subtle depth.\n"
+                "- Rounded geometry keeps the interface soft and contemporary.\n"
+                "- Accent color is reserved for focus and action hierarchy.\n"
                 "- Worker threads isolate lint, analysis, render, and export tasks from the Tk event loop.\n\n"
                 "Navigation\n"
                 "- Work: source editing and primary actions.\n"
@@ -676,39 +749,44 @@ class SongScriptGUI(tk.Tk):
 
     def _build_console(self):
         console_card = ThemedCard(self.shell, "Output Console")
-        console_card.grid(row=2, column=0, sticky="nsew", pady=(10, 0))
-        console_card.grid_rowconfigure(1, weight=1)
-        console_card.grid_columnconfigure(0, weight=1)
+        console_card.grid(row=2, column=0, sticky="nsew", pady=(12, 0))
+        console_card.content.grid_rowconfigure(1, weight=1)
+        console_card.content.grid_columnconfigure(0, weight=1)
 
-        header = tk.Frame(console_card, bg=GUI_THEME["panel"])
-        header.grid(row=1, column=0, sticky="ew", padx=14, pady=(0, 8))
+        header = tk.Frame(console_card.content, bg=GUI_THEME["panel"])
+        header.grid(row=0, column=0, sticky="ew", padx=18, pady=(18, 10))
         header.grid_columnconfigure(1, weight=1)
         tk.Label(header, textvariable=self.result_title_var, bg=GUI_THEME["panel"], fg=GUI_THEME["text"], font=(GUI_THEME["font"], 10, "bold")).grid(row=0, column=0, sticky="w")
         tk.Label(header, textvariable=self.summary_var, bg=GUI_THEME["panel"], fg=GUI_THEME["muted_text"], font=(GUI_THEME["mono"], 9)).grid(row=0, column=1, sticky="e")
 
-        self.console = self._build_readonly_text(console_card, row=2, padx=14, pady=(0, 14))
+        self.console = self._build_readonly_text(console_card.content, row=1, padx=18, pady=(0, 18))
 
     def _build_readonly_text(self, parent, row: int, padx: int, pady):
         frame = tk.Frame(parent, bg=GUI_THEME["panel"])
         frame.grid(row=row, column=0, sticky="nsew", padx=padx, pady=pady)
         frame.grid_rowconfigure(0, weight=1)
         frame.grid_columnconfigure(0, weight=1)
+        shadow = tk.Frame(frame, bg=GUI_THEME["shadow"])
+        shadow.place(relx=0, rely=0, relwidth=1, relheight=1, x=3, y=4)
+        surface = tk.Frame(frame, bg=GUI_THEME["panel_elevated"], highlightbackground=GUI_THEME["border"], highlightthickness=1)
+        surface.place(relx=0, rely=0, relwidth=1, relheight=1)
         widget = tk.Text(
-            frame,
+            surface,
             wrap="word",
-            bg=GUI_THEME["bg"],
+            bg=GUI_THEME["bg_alt"],
             fg=GUI_THEME["text"],
             insertbackground=GUI_THEME["text"],
             relief="flat",
-            highlightbackground=GUI_THEME["border"],
-            highlightthickness=1,
+            highlightthickness=0,
             font=(GUI_THEME["mono"], 10),
-            padx=12,
-            pady=12,
+            padx=16,
+            pady=16,
         )
+        surface.grid_rowconfigure(0, weight=1)
+        surface.grid_columnconfigure(0, weight=1)
         widget.grid(row=0, column=0, sticky="nsew")
         widget.configure(state="disabled")
-        scrollbar = ttk.Scrollbar(frame, orient="vertical", style="Mono.Vertical.TScrollbar", command=widget.yview)
+        scrollbar = ttk.Scrollbar(surface, orient="vertical", style="Mono.Vertical.TScrollbar", command=widget.yview)
         scrollbar.grid(row=0, column=1, sticky="ns")
         widget.configure(yscrollcommand=scrollbar.set)
         return widget
