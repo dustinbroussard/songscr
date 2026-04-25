@@ -6,11 +6,13 @@ import sys
 from pathlib import Path
 
 from .analyze import analyze_song, format_analysis_text
-from .core import build_lyrics_alignment_report, emit_song, lint_song, format_song, song_stats
+from .core import song_stats
 from .io_utils import write_bytes_atomic, write_text_atomic
+from .lint import lint_song
+from .lyrics import build_lyrics_alignment_report
+from .parser import emit_song, format_song, parse_song
 from .render import render_midi_bytes
 from .ast import to_jsonable
-from .core import parse_song
 from .midi_dump import dump_midi_text
 from .musicxml import prepare_musicxml_export
 from .styles import expand_song_templates

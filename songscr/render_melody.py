@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, List
 
-from .core import _parse_bracket_group, _parse_melody_event_tokens, _token_is_bracket_group, _melody_grid_slots_per_bar, _melody_grid_mode, _melody_cell_step_ticks
+from .timing import melody_cell_step_ticks, melody_grid_mode, melody_grid_slots_per_bar, parse_bracket_group, parse_melody_event_tokens, token_is_bracket_group
 from .midi import MidiEvent, cc, meta_lyric, note_off, note_on, pitch_bend, semitones_to_pitchbend
 
 def _vibrato_depth_to_cc1(depth: int) -> int:
@@ -85,9 +85,9 @@ def render_melody_bar(
 ) -> None:
     cell_count = len(bar_cells)
     beats_per_bar_int = int(round(beats_per_bar))
-    grid_slots_per_bar = _melody_grid_slots_per_bar(beats_per_bar, quantize)
-    mode = _melody_grid_mode(cell_count, beats_per_bar_int, grid_slots_per_bar)
-    cell_step_ticks = _melody_cell_step_ticks(mode, ticks_per_beat, grid_unit_ticks, bar_ticks, cell_count)
+    grid_slots_per_bar = melody_grid_slots_per_bar(beats_per_bar, quantize)
+    mode = melody_grid_mode(cell_count, beats_per_bar_int, grid_slots_per_bar)
+    cell_step_ticks = melody_cell_step_ticks(mode, ticks_per_beat, grid_unit_ticks, bar_ticks, cell_count)
 
     for ci, cell in enumerate(bar_cells):
         tokens = cell.tokens
@@ -96,16 +96,16 @@ def render_melody_bar(
         cell_start = abs_cursor + int(round(ci * cell_step_ticks))
 
         if mode == "beat":
-            bracket_tokens = [tok for tok in tokens if _token_is_bracket_group(tok)]
+            bracket_tokens = [tok for tok in tokens if token_is_bracket_group(tok)]
             if bracket_tokens:
                 for tok in bracket_tokens:
-                    inner_tokens = _parse_bracket_group(tok)
+                    inner_tokens = parse_bracket_group(tok)
                     if not inner_tokens:
                         continue
                     inner_ticks = ticks_per_beat / len(inner_tokens)
                     idx = 0
                     while idx < len(inner_tokens):
-                        token_spec, consumed = _parse_melody_event_tokens(inner_tokens, idx, 90)
+                        token_spec, consumed = parse_melody_event_tokens(inner_tokens, idx, 90)
                         consumed = max(1, consumed)
                         if token_spec is not None:
                             inner_start = cell_start + int(round(idx * inner_ticks))
@@ -131,13 +131,13 @@ def render_melody_bar(
             tok = tokens[idx]
             slot_start = cell_start + int(round(idx * sub_ticks))
             slot_ticks = max(1, int(round(sub_ticks)))
-            if _token_is_bracket_group(tok):
-                inner_tokens = _parse_bracket_group(tok)
+            if token_is_bracket_group(tok):
+                inner_tokens = parse_bracket_group(tok)
                 if inner_tokens:
                     inner_ticks = sub_ticks / len(inner_tokens)
                     inner_idx = 0
                     while inner_idx < len(inner_tokens):
-                        token_spec, consumed = _parse_melody_event_tokens(inner_tokens, inner_idx, 90)
+                        token_spec, consumed = parse_melody_event_tokens(inner_tokens, inner_idx, 90)
                         consumed = max(1, consumed)
                         if token_spec is not None:
                             inner_start = slot_start + int(round(inner_idx * inner_ticks))
@@ -156,7 +156,7 @@ def render_melody_bar(
                         inner_idx += consumed
                 idx += 1
                 continue
-            token_spec, consumed = _parse_melody_event_tokens(tokens, idx, 90)
+            token_spec, consumed = parse_melody_event_tokens(tokens, idx, 90)
             consumed = max(1, consumed)
             if token_spec is not None:
                 _schedule_melody_expr(

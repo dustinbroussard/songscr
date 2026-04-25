@@ -6,22 +6,20 @@ import re
 import xml.etree.ElementTree as ET
 
 from .chords import ChordSpec, parse_chord_symbol
-from .core import (
-    _collect_timed_bass_events_for_bar,
-    _parse_bracket_group,
-    _parse_melody_event_tokens,
-    _strip_paren_dyn,
-    _token_is_bracket_group,
-    _tokens_for_take,
-    build_lyrics_alignment_report,
-    resolve_bass_octave,
-    resolve_bass_pattern,
-    resolve_bass_rhythm,
-    _melody_grid_slots_per_bar,
-    _melody_grid_mode,
-)
 from .bass import generate_bass_events_from_chords
+from .lyrics import build_lyrics_alignment_report
+from .parser import filter_tokens_for_take
 from .pipeline import CompiledSong, compile_song, raise_for_compilation_errors
+from .song_settings import resolve_bass_octave, resolve_bass_pattern, resolve_bass_rhythm
+from .timing import (
+    collect_timed_bass_events_for_bar,
+    melody_grid_mode,
+    melody_grid_slots_per_bar,
+    parse_bracket_group,
+    parse_melody_event_tokens,
+    strip_paren_dyn,
+    token_is_bracket_group,
+)
 
 _ROOT_RE = re.compile(r"^([A-G])([#b]?)")
 
@@ -51,7 +49,7 @@ class BassSpan:
 
 
 def _cells_for_take(cells, take_number: int):
-    return [_CellView(tokens=_tokens_for_take(cell.tokens, take_number)) for cell in cells]
+    return [_CellView(tokens=filter_tokens_for_take(cell.tokens, take_number)) for cell in cells]
 
 
 @dataclass
@@ -282,7 +280,7 @@ def _collect_flattened_content(compiled: CompiledSong):
         if bass_track is not None:
             for bar_index, bar in enumerate(bass_track.bars):
                 filtered_cells = _cells_for_take(bar.cells, sec_inst.take_number)
-                bass_events, _ = _collect_timed_bass_events_for_bar(
+                bass_events, _ = collect_timed_bass_events_for_bar(
                     filtered_cells,
                     beats_per_bar,
                     quantize,
@@ -344,7 +342,7 @@ def _collect_flattened_content(compiled: CompiledSong):
                         break
                     if not cell.tokens:
                         continue
-                    token = _strip_paren_dyn(cell.tokens[0])
+                    token = strip_paren_dyn(cell.tokens[0])
                     token = re.sub(r"\{[0-9\-]+\}$", "", token)
                     if token in ("%", "R", "(R)", ""):
                         continue
@@ -355,13 +353,13 @@ def _collect_flattened_content(compiled: CompiledSong):
                 bar = melody_track.bars[bar_index]
                 cells = _cells_for_take(bar.cells, sec_inst.take_number)
                 cell_count = len(cells)
-                mode = _melody_grid_mode(cell_count, beats_per_bar, _melody_grid_slots_per_bar(beats_per_bar, quantize))
+                mode = melody_grid_mode(cell_count, beats_per_bar, melody_grid_slots_per_bar(beats_per_bar, quantize))
                 cell_step = _melody_cell_step_divisions(mode, divisions, grid_unit_divisions, measure_duration, cell_count)
 
                 def add_note_events(inner_tokens: List[str], start_base: int, inner_step: float) -> None:
                     idx = 0
                     while idx < len(inner_tokens):
-                        spec, consumed = _parse_melody_event_tokens(inner_tokens, idx, 90)
+                        spec, consumed = parse_melody_event_tokens(inner_tokens, idx, 90)
                         consumed = max(1, consumed)
                         if spec is not None:
                             start = start_base + int(round(idx * inner_step))
@@ -382,10 +380,10 @@ def _collect_flattened_content(compiled: CompiledSong):
                     cell_start = measure_start + int(round(cell_index * cell_step))
 
                     if mode == "beat":
-                        bracket_tokens = [tok for tok in tokens if _token_is_bracket_group(tok)]
+                        bracket_tokens = [tok for tok in tokens if token_is_bracket_group(tok)]
                         if bracket_tokens:
                             for token in bracket_tokens:
-                                inner_tokens = _parse_bracket_group(token)
+                                inner_tokens = parse_bracket_group(token)
                                 if inner_tokens:
                                     inner_step = divisions / len(inner_tokens)
                                     add_note_events(inner_tokens, cell_start, inner_step)
@@ -397,14 +395,14 @@ def _collect_flattened_content(compiled: CompiledSong):
                     while idx < len(tokens):
                         token = tokens[idx]
                         slot_start = cell_start + int(round(idx * sub_step))
-                        if _token_is_bracket_group(token):
-                            inner_tokens = _parse_bracket_group(token)
+                        if token_is_bracket_group(token):
+                            inner_tokens = parse_bracket_group(token)
                             if inner_tokens:
                                 inner_step = sub_step / len(inner_tokens)
                                 add_note_events(inner_tokens, slot_start, inner_step)
                             idx += 1
                             continue
-                        spec, consumed = _parse_melody_event_tokens(tokens, idx, 90)
+                        spec, consumed = parse_melody_event_tokens(tokens, idx, 90)
                         consumed = max(1, consumed)
                         if spec is not None:
                             slot_duration = max(1, int(round(sub_step)))

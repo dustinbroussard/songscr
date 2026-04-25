@@ -6,31 +6,29 @@ import random
 import re
 from types import SimpleNamespace
 
-from .core import (
-    _extract_velocity,
-    _collect_timed_bass_events_for_bar,
-    _note_to_midi,
-    _strip_paren_dyn,
-    _tokens_for_take,
-    build_lyrics_alignment_report,
+from .automation import extract_auto_ramps, percent_to_cc_value
+from .bass import BassEvent, generate_bass_events_from_chords
+from .chords import chord_to_midi_notes, parse_chord_symbol
+from .guitar_voicings import generate_guitar_voicing, parse_string_set_suffix
+from .lyrics import build_lyrics_alignment_report
+from .parser import filter_tokens_for_take
+from .render_drums import render_drums_bar
+from .render_melody import render_melody_bar
+from .pipeline import compile_song, raise_for_compilation_errors
+from .song_settings import resolve_bass_octave, resolve_bass_pattern, resolve_bass_rhythm
+from .timing import (
+    collect_timed_bass_events_for_bar,
+    extract_velocity,
     has_explicit_pitch_bend_range,
-    resolve_bass_octave,
-    resolve_bass_pattern,
-    resolve_bass_rhythm,
+    note_to_midi,
     resolve_capo,
     resolve_chord_range,
     resolve_chord_voicing,
     resolve_guitar_position,
     resolve_guitar_tuning,
     resolve_pitch_bend_range,
+    strip_paren_dyn,
 )
-from .automation import extract_auto_ramps, percent_to_cc_value
-from .bass import BassEvent, generate_bass_events_from_chords
-from .chords import chord_to_midi_notes, parse_chord_symbol
-from .guitar_voicings import generate_guitar_voicing, parse_string_set_suffix
-from .render_drums import render_drums_bar
-from .render_melody import render_melody_bar
-from .pipeline import compile_song, raise_for_compilation_errors
 from .midi import MidiEvent, build_midi, build_track, cc, meta_tempo, meta_time_signature, note_off, note_on, program_change
 
 _ALT_ENDING_RE = re.compile(r'^\{(\d+)\}$')
@@ -50,7 +48,7 @@ def _append_pitch_bend_range_rpn(
 
 
 def _cells_for_take(cells, take_number: int):
-    return [SimpleNamespace(tokens=_tokens_for_take(cell.tokens, take_number)) for cell in cells]
+    return [SimpleNamespace(tokens=filter_tokens_for_take(cell.tokens, take_number)) for cell in cells]
 
 
 def _interp_percent(start_percent: int, end_percent: int, start_tick: int, end_tick: int, tick: int) -> int:
@@ -288,7 +286,7 @@ def render_midi_bytes(text: str, seed: Optional[int]=None, strict: bool=False) -
         if trb is not None:
             for bar_index, bar in enumerate(trb.bars):
                 filtered_cells = _cells_for_take(bar.cells, take_number)
-                bass_bar_events, _ = _collect_timed_bass_events_for_bar(
+                bass_bar_events, _ = collect_timed_bass_events_for_bar(
                     filtered_cells,
                     beats_per_bar,
                     quantize,
@@ -356,8 +354,8 @@ def render_midi_bytes(text: str, seed: Optional[int]=None, strict: bool=False) -
                     if tok in ("%", "R", "(R)"):
                         beat += 1
                         continue
-                    vel = _extract_velocity(tok) or 75
-                    t = _strip_paren_dyn(tok)
+                    vel = extract_velocity(tok) or 75
+                    t = strip_paren_dyn(tok)
                     t, string_set, _ = parse_string_set_suffix(t)
                     spec = parse_chord_symbol(t)
                     start = abs_cursor + beat * ticks_per_beat
@@ -387,7 +385,7 @@ def render_midi_bytes(text: str, seed: Optional[int]=None, strict: bool=False) -
                     else:
                         root = re.match(r'^([A-G](?:#|b)?)', t)
                         if root:
-                            n = _note_to_midi(root.group(1) + "3")
+                            n = note_to_midi(root.group(1) + "3")
                             if n is not None:
                                 append_abs(chord_events, start, last_ticks, "chords", note_on(0, 0, n, vel))
                                 append_abs(chord_events, start + dur, last_ticks, "chords", note_off(0, 0, n, 0))

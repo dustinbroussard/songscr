@@ -5,7 +5,7 @@ from typing import Dict, List
 import re
 
 from .chords import parse_chord_symbol, pitch_class_to_midi
-_ALT_ENDING_RE = re.compile(r"^\{(\d+)\}$")
+from .parser import filter_tokens_for_take
 
 
 @dataclass
@@ -15,21 +15,6 @@ class BassEvent:
     midi_note: int
     velocity: int = 78
     generated: bool = True
-
-
-def _tokens_for_take(tokens: List[str], take_number: int) -> List[str]:
-    out: List[str] = []
-    active_take = None
-    for token in tokens:
-        if _ALT_ENDING_RE.match(token):
-            active_take = int(token[1:-1])
-            continue
-        if active_take is None or active_take == take_number:
-            out.append(token)
-    return out
-
-
-
 
 def _normalize_bass_range(midi_note: int) -> int:
     while midi_note < 28:
@@ -94,7 +79,7 @@ def generate_bass_events_from_chords(section, pattern, rhythm, octave, timing_co
     for bar_index, bar in enumerate(chords_track.bars):
         if bar_index >= int(timing_context.get("max_bars", len(chords_track.bars))):
             break
-        filtered_cells = [_tokens_for_take(cell.tokens, take_number) for cell in bar.cells]
+        filtered_cells = [filter_tokens_for_take(cell.tokens, take_number) for cell in bar.cells]
         for beat_index, tokens in enumerate(filtered_cells[:beats_per_bar]):
             token = ""
             if tokens:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, List
 
-from .core import _parse_bracket_group, _token_is_bracket_group
+from .timing import parse_bracket_group, token_is_bracket_group
 from .midi import MidiEvent, note_off, note_on
 
 
@@ -58,8 +58,8 @@ def render_drums_bar(
             slot_tokens = ["."] * slots_per_beat
             if cell.tokens:
                 first = cell.tokens[0]
-                if _token_is_bracket_group(first):
-                    inner_tokens = _parse_bracket_group(first)
+                if token_is_bracket_group(first):
+                    inner_tokens = parse_bracket_group(first)
                     slot_tokens = _normalize_drum_bracket_tokens(inner_tokens, slots_per_beat)
                 else:
                     slot_tokens[0] = first
@@ -73,13 +73,13 @@ def render_drums_bar(
             if not cell.tokens:
                 continue
             tok = cell.tokens[0]
-            if _token_is_bracket_group(tok):
+            if token_is_bracket_group(tok):
                 continue
             schedule_slot(slot_idx, tok)
         return
 
     # Fallback for unexpected drum grids: flatten non-bracket tokens across the bar.
-    tokens = [tok for cell in cells for tok in cell.tokens if not _token_is_bracket_group(tok)]
+    tokens = [tok for cell in cells for tok in cell.tokens if not token_is_bracket_group(tok)]
     if not tokens:
         return
     step_ticks = bar_ticks / len(tokens)

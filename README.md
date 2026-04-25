@@ -54,6 +54,12 @@ songscr export-ast my_song.songscr -o my_song.ast.json
 songscr stats my_song.songscr
 ```
 
+### Desktop GUI
+```bash
+songscr-gui
+```
+The GUI is a lightweight `tkinter` front-end with a true-black AMOLED theme, threaded task execution, and direct access to lint, analyze, render, and export workflows.
+
 ## MVP notes
 - Melody rendering supports simple NOTE tokens, rests, and sustain dashes like `G3--`.
 - Chords render as *root notes only* (placeholder for richer voicings later).

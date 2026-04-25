@@ -3,9 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, List, Tuple
 
-from .core import LintIssue, _grid_unit_ticks, _parse_quantize, _parse_tempo, _parse_time_signature, lint_song, parse_song
+from .lint import LintIssue, lint_song
+from .parser import parse_song
 from .styles import expand_song_templates
 from .struct import build_playback_plan
+from .timing import grid_unit_ticks, parse_quantize, parse_tempo, parse_time_signature
 
 
 @dataclass(frozen=True)
@@ -32,9 +34,9 @@ def compile_song(text: str, *, strict: bool = False) -> CompiledSong:
     lint_issues = lint_song(text, strict=strict, song=source_song)
     playback_plan, struct_issues = build_playback_plan(expanded_song)
 
-    num, den = _parse_time_signature(expanded_song)
-    tempo = _parse_tempo(expanded_song)
-    quantize = _parse_quantize(expanded_song)
+    num, den = parse_time_signature(expanded_song)
+    tempo = parse_tempo(expanded_song)
+    quantize = parse_quantize(expanded_song)
     ppq = 480
     ticks_per_beat = ppq
     beats_per_bar = num * (4 / den)
@@ -54,7 +56,7 @@ def compile_song(text: str, *, strict: bool = False) -> CompiledSong:
         ticks_per_beat=ticks_per_beat,
         beats_per_bar=beats_per_bar,
         bar_ticks=bar_ticks,
-        grid_unit_ticks=_grid_unit_ticks(ticks_per_beat, quantize),
+        grid_unit_ticks=grid_unit_ticks(ticks_per_beat, quantize),
     )
 
 

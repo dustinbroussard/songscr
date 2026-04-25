@@ -6,24 +6,22 @@ import re
 from types import SimpleNamespace
 from typing import Any, Dict, List, Optional, Tuple
 
-from .core import (
-    _collect_timed_bass_events_for_bar,
-    _collect_timed_melody_events_for_bar,
-    _grid_unit_ticks,
-    _lyrics_token_estimated_syllables,
-    _parse_bracket_group,
-    _parse_melody_event_tokens,
-    _strip_paren_dyn,
-    _token_is_bracket_group,
-    _tokens_for_take,
-    build_lyrics_alignment_report,
+from .chords import parse_chord_symbol
+from .lyrics import build_lyrics_alignment_report, lyrics_token_estimated_syllables
+from .parser import filter_tokens_for_take
+from .pipeline import compile_song
+from .styles import _track_has_content, resolve_style_context
+from .timing import (
+    collect_timed_bass_events_for_bar,
+    collect_timed_melody_events_for_bar,
+    parse_bracket_group,
+    parse_melody_event_tokens,
     resolve_chord_range,
     resolve_chord_voicing,
     resolve_scoped_tag_value,
+    strip_paren_dyn,
+    token_is_bracket_group,
 )
-from .chords import parse_chord_symbol
-from .pipeline import compile_song
-from .styles import _track_has_content, resolve_style_context
 
 DRUM_TOKENS = ("K", "S", "H", "O", "C", "T")
 DRUM_NAMES = {"K": "kick", "S": "snare", "H": "closed_hat", "O": "open_hat", "C": "crash", "T": "tom"}
@@ -46,13 +44,13 @@ def _round2(value: float) -> float:
 
 
 def _cells_for_take(bar, take_number: int):
-    return [SimpleNamespace(tokens=_tokens_for_take(cell.tokens, take_number), tags=cell.tags) for cell in bar.cells]
+    return [SimpleNamespace(tokens=filter_tokens_for_take(cell.tokens, take_number), tags=cell.tags) for cell in bar.cells]
 
 
 def _bar_token_string(bar, take_number: int) -> str:
     parts: List[str] = []
     for cell in bar.cells:
-        filtered = _tokens_for_take(cell.tokens, take_number)
+        filtered = filter_tokens_for_take(cell.tokens, take_number)
         parts.append(" ".join(filtered))
     return " | ".join(parts).strip()
 
@@ -70,20 +68,20 @@ def _collect_melody_specs_and_rests(bar_cells) -> Tuple[List[Any], int]:
                 rest_count += 1
                 idx += 1
                 continue
-            spec, consumed = _parse_melody_event_tokens(tokens, idx, 90)
+            spec, consumed = parse_melody_event_tokens(tokens, idx, 90)
             specs.append(spec) if spec is not None else None
             idx += max(1, consumed)
 
     for cell in bar_cells:
         if not cell.tokens:
             continue
-        if len(cell.tokens) == 1 and _token_is_bracket_group(cell.tokens[0]):
-            process_tokens(_parse_bracket_group(cell.tokens[0]))
+        if len(cell.tokens) == 1 and token_is_bracket_group(cell.tokens[0]):
+            process_tokens(parse_bracket_group(cell.tokens[0]))
             continue
         tokens = []
         for token in cell.tokens:
-            if _token_is_bracket_group(token):
-                process_tokens(_parse_bracket_group(token))
+            if token_is_bracket_group(token):
+                process_tokens(parse_bracket_group(token))
             else:
                 tokens.append(token)
         if tokens:
@@ -100,8 +98,8 @@ def _collect_drum_hits_for_bar(bar_cells) -> Counter:
 
     for cell in bar_cells:
         for token in cell.tokens:
-            if _token_is_bracket_group(token):
-                for inner in _parse_bracket_group(token):
+            if token_is_bracket_group(token):
+                for inner in parse_bracket_group(token):
                     add_token(inner)
             else:
                 add_token(token)
@@ -120,7 +118,7 @@ def _section_labels(song) -> Dict[int, List[str]]:
 
 
 def _normalized_chord_token(token: str) -> str:
-    text = _strip_paren_dyn(token)
+    text = strip_paren_dyn(token)
     text = re.sub(r"\{[^}]+\}", "", text).strip()
     return text
 
@@ -251,7 +249,7 @@ def analyze_song(text: str) -> Dict[str, Any]:
             for bar_offset, bar in enumerate(melody_track.bars):
                 filtered_cells = _cells_for_take(bar, section_instance.take_number)
                 bar_start = abs_cursor + (bar_offset * bar_ticks)
-                events = _collect_timed_melody_events_for_bar(
+                events = collect_timed_melody_events_for_bar(
                     filtered_cells,
                     beats_per_bar,
                     quantize,
@@ -288,7 +286,7 @@ def analyze_song(text: str) -> Dict[str, Any]:
         if bass_track is not None:
             for bar_offset, bar in enumerate(bass_track.bars):
                 filtered_cells = _cells_for_take(bar, section_instance.take_number)
-                events, _ = _collect_timed_bass_events_for_bar(
+                events, _ = collect_timed_bass_events_for_bar(
                     filtered_cells,
                     beats_per_bar,
                     quantize,
